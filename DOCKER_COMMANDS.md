@@ -348,12 +348,3 @@ http://localhost:8081
 - docker system prune
 
 ---
-
-# Next Topics
-
-- Dockerfile
-- Docker Volumes
-- Docker Compose
-- Dockerizing Node.js
-- Dockerizing Frontend
-- Multi-container Applications
