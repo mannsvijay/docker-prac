@@ -29,3 +29,20 @@ const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+const User = require("./models/User");
+
+app.get("/add-user", async (req, res) => {
+  try {
+    const user = new User({
+      name: "Manan Vijay",
+      email: "manan@gmail.com"
+    });
+
+    await user.save();
+
+    res.send("User Added Successfully");
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
