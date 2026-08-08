@@ -1,6 +1,5 @@
-version: "3.8"
-
 services:
+
   mongodb:
     image: mongo
     container_name: mongodb
@@ -27,6 +26,30 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: password
     depends_on:
       - mongodb
+    networks:
+      - mongo-network
+
+  backend:
+    build: ./backend
+    container_name: backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      MONGO_URI: mongodb://admin:password@mongodb:27017/user-account?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - mongo-network
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
     networks:
       - mongo-network
 
