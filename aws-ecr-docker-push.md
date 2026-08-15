@@ -1,8 +1,14 @@
-# Push Docker Images to AWS ECR Private Repository
+# Docker → AWS ECR Private Repository Workflow
 
-## 1. Prerequisites
+## 1. Build the application images
 
-Docker images were already built locally:
+From the project root:
+
+```powershell
+docker compose -f mongo-docker-compose.yaml up -d --build
+```
+
+Check images:
 
 ```powershell
 docker images
@@ -15,44 +21,43 @@ docker-prac-backend:latest
 docker-prac-frontend:latest
 ```
 
-AWS CLI was installed and verified:
+## 2. Run the complete application
 
 ```powershell
-aws --version
+docker compose -f mongo-docker-compose.yaml up -d
 ```
 
----
-
-## 2. Configure AWS CLI
-
-Configure the AWS CLI:
+Check containers:
 
 ```powershell
-aws configure
+docker ps
 ```
 
-Enter:
+Our stack contains:
 
 ```text
-AWS Access Key ID: <your access key>
-AWS Secret Access Key: <your secret key>
-Default region name: us-east-1
-Default output format: json
+frontend
+backend
+mongodb
+mongo-express
 ```
 
-Verify the AWS identity:
+Mongo Express:
 
-```powershell
-aws sts get-caller-identity
+```text
+http://localhost:8081
 ```
 
----
+## 3. Create private ECR repositories
 
-## 3. Create Private ECR Repositories
+In AWS:
 
-In AWS Console:
-
-**Amazon ECR → Private repositories → Create repository**
+```text
+AWS Console
+→ Amazon ECR
+→ Private repositories
+→ Create repository
+```
 
 Created:
 
@@ -67,26 +72,36 @@ Region:
 us-east-1
 ```
 
----
+## 4. Configure AWS CLI
 
-## 4. Verify ECR Repositories
+```powershell
+aws configure
+```
+
+Enter:
+
+```text
+AWS Access Key ID: <your access key>
+AWS Secret Access Key: <your secret key>
+Default region name: us-east-1
+Default output format: json
+```
+
+Verify:
+
+```powershell
+aws sts get-caller-identity
+```
+
+Never share your AWS Secret Access Key.
+
+## 5. Verify ECR repositories
 
 ```powershell
 aws ecr describe-repositories --region us-east-1 --query "repositories[].repositoryName" --output table
 ```
 
-Expected:
-
-```text
-docker-prac-backend
-docker-prac-frontend
-```
-
----
-
-## 5. Login Docker to AWS ECR
-
-Use the AWS account ID and region:
+## 6. Login Docker to ECR
 
 ```powershell
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 489391486182.dkr.ecr.us-east-1.amazonaws.com
@@ -98,37 +113,35 @@ Expected:
 Login Succeeded
 ```
 
----
+## 7. Tag the images
 
-## 6. Tag the Backend Image
+Backend:
 
 ```powershell
 docker tag docker-prac-backend:latest 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:latest
 ```
 
-## 7. Tag the Frontend Image
+Frontend:
 
 ```powershell
 docker tag docker-prac-frontend:latest 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-frontend:latest
 ```
 
----
+## 8. Push images to ECR
 
-## 8. Push Backend Image to ECR
+Backend:
 
 ```powershell
 docker push 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:latest
 ```
 
-## 9. Push Frontend Image to ECR
+Frontend:
 
 ```powershell
 docker push 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-frontend:latest
 ```
 
----
-
-## 10. Verify Images in ECR
+## 9. Verify images in ECR
 
 Backend:
 
@@ -152,41 +165,209 @@ Expected:
 ]
 ```
 
----
+# When you change your code
 
-## Final Result
+A Docker image does not automatically update when your source code changes.
 
-Both Docker images are now stored in private AWS ECR repositories:
+For example, if you change:
 
 ```text
-AWS ECR
-│
-├── docker-prac-backend
-│   └── latest ✅
-│
-└── docker-prac-frontend
-    └── latest ✅
+backend/server.js
 ```
 
-### Overall Flow
+or:
 
 ```text
-Local Docker Images
-        │
-        ▼
-AWS CLI Authentication
-        │
-        ▼
-Docker Login to ECR
-        │
-        ▼
-Tag Docker Images
-        │
-        ▼
+frontend/script.js
+```
+
+you need to rebuild the affected image.
+
+### 1. Change the code
+
+Make your code changes normally.
+
+### 2. Rebuild
+
+Rebuild the complete application:
+
+```powershell
+docker compose -f mongo-docker-compose.yaml up -d --build
+```
+
+Or only the backend:
+
+```powershell
+docker compose -f mongo-docker-compose.yaml build backend
+```
+
+Or only the frontend:
+
+```powershell
+docker compose -f mongo-docker-compose.yaml build frontend
+```
+
+### 3. Tag the updated image
+
+Backend:
+
+```powershell
+docker tag docker-prac-backend:latest 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:latest
+```
+
+Frontend:
+
+```powershell
+docker tag docker-prac-frontend:latest 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-frontend:latest
+```
+
+### 4. Push the updated image
+
+```powershell
+docker push 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:latest
+
+docker push 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-frontend:latest
+```
+
+Only push the image that you actually changed if the other image has not changed.
+
+# Using version tags
+
+Instead of only using `latest`, you can use versions:
+
+```powershell
+docker tag docker-prac-backend:latest 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:v1
+docker push 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:v1
+```
+
+After another change:
+
+```text
+v2
+v3
+v4
+```
+
+This makes specific releases easier to identify and roll back to.
+
+# Local image vs ECR image
+
+Local:
+
+```text
+docker-prac-backend:latest
+```
+
+ECR:
+
+```text
+489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:latest
+```
+
+They are separate copies.
+
+After changing code:
+
+```text
+Code Change
+    ↓
+Docker Build
+    ↓
+New Local Image
+    ↓
+Tag for ECR
+    ↓
 docker push
-        │
-        ▼
-AWS ECR Private Repositories
+    ↓
+Updated ECR Image
 ```
 
-> **Security:** Never commit or share your AWS Access Key or Secret Access Key. Do not put them in your Git repository or Docker images.
+# Complete workflow
+
+First time:
+
+```text
+Build
+  ↓
+Run/Test locally
+  ↓
+AWS CLI configured
+  ↓
+Docker login to ECR
+  ↓
+Tag images
+  ↓
+Push images
+  ↓
+Verify in ECR
+```
+
+After a code change:
+
+```text
+Change code
+  ↓
+Rebuild Docker image
+  ↓
+Test locally
+  ↓
+Tag updated image
+  ↓
+Push to ECR
+```
+
+# Final architecture
+
+```text
+                 LOCAL MACHINE
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+     Frontend Code           Backend Code
+          │                       │
+          ▼                       ▼
+   Frontend Image           Backend Image
+          │                       │
+          └───────────┬───────────┘
+                      │
+                      ▼
+                 AWS ECR
+              PRIVATE REGISTRY
+                 │        │
+                 ▼        ▼
+            frontend   backend
+             :latest    :latest
+```
+
+MongoDB and Mongo Express continue using their existing Docker images from the Compose file. We pushed only our own application images to private ECR.
+
+## Cheat Sheet
+
+```powershell
+# Build
+docker compose -f mongo-docker-compose.yaml up -d --build
+
+# Run
+docker compose -f mongo-docker-compose.yaml up -d
+
+# Check containers
+docker ps
+
+# Check images
+docker images
+
+# Login to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 489391486182.dkr.ecr.us-east-1.amazonaws.com
+
+# Tag backend
+docker tag docker-prac-backend:latest 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:latest
+
+# Tag frontend
+docker tag docker-prac-frontend:latest 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-frontend:latest
+
+# Push backend
+docker push 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:latest
+
+# Push frontend
+docker push 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-frontend:latest
+```
