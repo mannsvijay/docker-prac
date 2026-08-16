@@ -1,42 +1,39 @@
 # Docker Practice Repository
 
-This repository is used for practicing Docker with a simple full-stack app.
+A hands-on Docker learning project where I containerized a simple full-stack application and practiced Docker networking, Docker Compose, MongoDB, persistent volumes, and AWS ECR private container registries.
 
-## Project structure
+The project consists of:
 
-- `docker-compose.yml` - orchestrates the backend and frontend services.
-- `backend/` - Node.js server application.
-  - `Dockerfile` - builds the backend container.
-  - `package.json` - backend dependencies and metadata.
-  - `server.js` - backend app entry point.
-- `frontend/` - static frontend app.
-  - `Dockerfile` - builds the frontend container.
-  - `index.html` - web page served by the frontend.
-  - `script.js` - frontend script.
+- Node.js + Express backend
+- Static HTML/CSS/JavaScript frontend
+- MongoDB database
+- Mongo Express database management UI
+- Docker Compose for multi-container orchestration
+- Docker volumes for persistent MongoDB data
+- Custom Docker networks for service-to-service communication
+- AWS ECR private repositories for storing Docker images
 
-## Usage
+---
 
-1. Install Docker Desktop and make sure Docker is running.
-2. From the repository root, build and start services:
-
-```bash
-docker-compose up --build
-```
-
-3. Open the frontend in your browser at:
+## Project Architecture
 
 ```text
-http://localhost:3000
-```
+                    Docker Compose
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+        ▼                ▼                ▼
+   Frontend          Backend          MongoDB
+   Nginx :80        Node.js :5000     Mongo :27017
+        │                │                │
+        │                └───────────────►│
+        │                         MongoDB Volume
+        │
+        ▼
+   Browser :3000
 
-4. Stop the services with:
-
-```bash
-docker-compose down
-```
-
-## Notes
-
-- This repo is for Docker learning and experimentation.
-- You can modify the app code, rebuild containers, and explore Docker networking.
-- The backend and frontend are containerized separately to practice multi-service setups.
+                    Mongo Express
+                       :8081
+                         │
+                         ▼
+                      MongoDB
