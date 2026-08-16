@@ -30,7 +30,7 @@ services:
       - mongo-network
 
   backend:
-    build: ./backend
+    image: 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:latest
     container_name: backend
     restart: always
     ports:
@@ -43,7 +43,7 @@ services:
       - mongo-network
 
   frontend:
-    build: ./frontend
+    image: 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-frontend:latest
     container_name: frontend
     restart: always
     ports:
