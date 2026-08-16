@@ -1,23 +1,23 @@
 services:
 
   mongodb:
-    image: mongo
+    image: mongo:latest
     container_name: mongodb
-    restart: always
+    restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
-    networks:
-      - mongo-network
     volumes:
       - mongo-data:/data/db
+    networks:
+      - mongo-network
 
   mongo-express:
-    image: mongo-express
+    image: mongo-express:latest
     container_name: mongo-express
-    restart: always
+    restart: unless-stopped
     ports:
       - "8081:8081"
     environment:
@@ -32,7 +32,7 @@ services:
   backend:
     image: 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-backend:latest
     container_name: backend
-    restart: always
+    restart: unless-stopped
     ports:
       - "5000:5000"
     environment:
@@ -45,7 +45,7 @@ services:
   frontend:
     image: 489391486182.dkr.ecr.us-east-1.amazonaws.com/docker-prac-frontend:latest
     container_name: frontend
-    restart: always
+    restart: unless-stopped
     ports:
       - "3000:80"
     depends_on:
@@ -59,3 +59,4 @@ networks:
 
 volumes:
   mongo-data:
+    driver: local
