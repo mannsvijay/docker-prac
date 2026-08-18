@@ -3,7 +3,7 @@
 A hands-on Docker learning project where I containerized a full-stack
 application, added MongoDB and Mongo Express, used Docker Compose and
 persistent volumes, and pushed application images to private AWS ECR
-repositories.
+repositories for backend and frontend
 
 ## Project Structure
 
